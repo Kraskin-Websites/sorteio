@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raspadinha Açaí</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background-image: url(./logo.jpg);
+  background-repeat: no-repeat;     /* não repetir a imagem */
+  background-size: cover;           /* cobre toda a tela */
+  background-position: center;      /* centraliza a imagem */
+  background-attachment: fixed;     /* opcional: fixa o fundo ao rolar a página */
+  color: #fff;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+
+  h1 { margin-top: 20px; }
+
+  #raspadinha {
+    width: 300px;
+    height: 220px;
+    margin: 30px auto;
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    background: #FFD700;
+  }
+
+  #premio {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    border-radius: 10px;
+    color: #4B0082;
+    font-weight: bold;
+    font-size: 20px;
+    padding: 10px;
+  }
+
+  #premio img {
+    max-width: 80%;
+    max-height: 100px;
+    margin-bottom: 10px;
+  }
+
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 10px;
+  }
+
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background: yellow;
+    color: #4B0082;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 20px;
+  }
+  button:disabled {
+    background: gray;
+    cursor: not-allowed;
+  }
+
+  #senhaBox {
+    display: none;
+    margin-top: 20px;
+  }
+p{
+    padding: 10px 20px;
+    font-size: 16px;
+    background: yellow;
+    color: #4B0082;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 20px;
+    color: #4B0082;}
+  input {
+    padding: 8px;
+    border-radius: 5px;
+    border: none;
+    margin-right: 5px;
+  }
+
+</style>
+</head>
+<body>
+<h1>🎉 Raspadinha Açaí 🎉</h1>
+
+<div id="raspadinha">
+  <div id="premio">
+    <img src="" alt="Prêmio" id="imgPremio">
+    <span id="textoPremio"></span>
+  </div>
+  <canvas id="overlay"></canvas>
+</div>
+
+<button id="reiniciar">Nova Raspadinha</button>
+
+<div id="senhaBox">
+  <p>⚠️ Você já jogou! Insira a senha para liberar:</p>
+  <input type="password" id="senhaInput" placeholder="Digite a senha">
+  <button onclick="verificarSenha()">Liberar</button>
+</div>
+
+<script>
+const raspadinha = document.getElementById("raspadinha");
+const canvas = document.getElementById("overlay");
+const ctx = canvas.getContext("2d");
+const botao = document.getElementById("reiniciar");
+const senhaBox = document.getElementById("senhaBox");
+const senhaCorreta = "ACAI2025";
+const imgPremio = document.getElementById("imgPremio");
+const textoPremio = document.getElementById("textoPremio");
+
+// Lista de prêmios (imagem + texto)
+const premios = [
+  { img: "https://cdn-icons-png.flaticon.com/512/264/264654.png", texto: "5% Desconto" },
+  { img: "https://cdn-icons-png.flaticon.com/512/264/264654.png", texto: "10% Desconto" },
+  { img: "https://cdn-icons-png.flaticon.com/512/264/264654.png", texto: "15% Desconto" },
+  { img: "https://cdn-icons-png.flaticon.com/512/264/264654.png", texto: "20% Desconto" },
+  { img: "https://cdn-icons-png.flaticon.com/512/6816/6816167.png", texto: "Brinde" },
+  { img: "https://cdn-icons-png.flaticon.com/512/73/73495.png", texto: "Copo Grátis" },
+];
+
+let desenhando = false;
+let premioAtual = {};
+
+// Ajusta canvas
+function ajustarCanvas() {
+  canvas.width = raspadinha.offsetWidth;
+  canvas.height = raspadinha.offsetHeight;
+  ctx.fillStyle = "silver";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+ajustarCanvas();
+window.addEventListener("resize", ajustarCanvas);
+
+function iniciar(e){ desenhando = true; raspando(e); }
+function parar(){ desenhando = false; ctx.beginPath(); }
+
+function raspando(e){
+  if(!desenhando) return;
+  let rect = canvas.getBoundingClientRect();
+  let x = (e.clientX || e.touches[0].clientX) - rect.left;
+  let y = (e.clientY || e.touches[0].clientY) - rect.top;
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath();
+  ctx.arc(x, y, 15, 0, 2*Math.PI);
+  ctx.fill();
+}
+
+canvas.addEventListener("mousedown", iniciar);
+canvas.addEventListener("mousemove", raspando);
+canvas.addEventListener("mouseup", parar);
+canvas.addEventListener("mouseleave", parar);
+canvas.addEventListener("touchstart", iniciar);
+canvas.addEventListener("touchmove", raspando);
+canvas.addEventListener("touchend", parar);
+
+function sortearPremio(){
+  const index = Math.floor(Math.random() * premios.length);
+  premioAtual = premios[index];
+  imgPremio.src = premioAtual.img;
+  textoPremio.textContent = premioAtual.texto;
+}
+
+// Inicializa prêmio
+sortearPremio();
+
+if(localStorage.getItem("jaRaspou") === "true"){
+  botao.disabled = true;
+  senhaBox.style.display = "block";
+}
+
+botao.addEventListener("click", () => {
+  sortearPremio();
+  ajustarCanvas();
+  localStorage.setItem("jaRaspou", "true");
+  botao.disabled = true;
+  senhaBox.style.display = "block";
+});
+
+function verificarSenha(){
+  const senhaDigitada = document.getElementById("senhaInput").value;
+  if(senhaDigitada === senhaCorreta){
+    sortearPremio();
+    ajustarCanvas();
+    botao.disabled = false;
+    senhaBox.style.display = "none";
+    localStorage.setItem("jaRaspou", "false");
+  } else {
+    alert("Senha incorreta ❌");
+  }
+}
+
+
+</script>
+</body>
+</html>

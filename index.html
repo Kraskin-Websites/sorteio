@@ -141,29 +141,67 @@ const premios = [
 
 let desenhando = false;
 let premioAtual = {};
+let bloqueado = localStorage.getItem("jaRaspou") === "true";
 
-// Ajusta canvas
+// Imagem usada como raspadinha (logo)
+const imgOverlay = new Image();
+imgOverlay.src = "./logo.jpg"; // troque pelo caminho certo da logo
+
+// Ajusta canvas com a logo
 function ajustarCanvas() {
   canvas.width = raspadinha.offsetWidth;
   canvas.height = raspadinha.offsetHeight;
-  ctx.fillStyle = "silver";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  imgOverlay.onload = () => {
+    ctx.drawImage(imgOverlay, 0, 0, canvas.width, canvas.height);
+  };
+  if (imgOverlay.complete) {
+    ctx.drawImage(imgOverlay, 0, 0, canvas.width, canvas.height);
+  }
 }
 ajustarCanvas();
 window.addEventListener("resize", ajustarCanvas);
 
-function iniciar(e){ desenhando = true; raspando(e); }
+function iniciar(e){
+  if(bloqueado){  
+    alert("⚠️ Você já jogou! Digite a senha para liberar.");
+    return;
+  }
+  desenhando = true;
+  raspando(e);
+}
 function parar(){ desenhando = false; ctx.beginPath(); }
 
 function raspando(e){
-  if(!desenhando) return;
+  if(!desenhando || bloqueado) return;
   let rect = canvas.getBoundingClientRect();
-  let x = (e.clientX || e.touches[0].clientX) - rect.left;
-  let y = (e.clientY || e.touches[0].clientY) - rect.top;
+  let x = (e.clientX || e.touches?.[0].clientX) - rect.left;
+  let y = (e.clientY || e.touches?.[0].clientY) - rect.top;
   ctx.globalCompositeOperation = "destination-out";
   ctx.beginPath();
   ctx.arc(x, y, 15, 0, 2*Math.PI);
   ctx.fill();
+
+  verificarRaspagem();
+}
+
+// Função para medir a % já raspada
+function verificarRaspagem(){
+  let pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  let total = pixels.data.length / 4; // total de pixels
+  let transparentes = 0;
+
+  for (let i = 3; i < pixels.data.length; i += 4) {
+    if (pixels.data[i] === 0) transparentes++;
+  }
+
+  let porcentagem = (transparentes / total) * 100;
+
+  if(porcentagem > 40){ // quando raspou 40% ou mais
+    bloqueado = true;
+    localStorage.setItem("jaRaspou", "true");
+    botao.disabled = true;
+    senhaBox.style.display = "block";
+  }
 }
 
 canvas.addEventListener("mousedown", iniciar);
@@ -184,7 +222,8 @@ function sortearPremio(){
 // Inicializa prêmio
 sortearPremio();
 
-if(localStorage.getItem("jaRaspou") === "true"){
+// Se já raspou antes, trava
+if(bloqueado){
   botao.disabled = true;
   senhaBox.style.display = "block";
 }
@@ -192,6 +231,7 @@ if(localStorage.getItem("jaRaspou") === "true"){
 botao.addEventListener("click", () => {
   sortearPremio();
   ajustarCanvas();
+  bloqueado = true;
   localStorage.setItem("jaRaspou", "true");
   botao.disabled = true;
   senhaBox.style.display = "block";
@@ -204,13 +244,14 @@ function verificarSenha(){
     ajustarCanvas();
     botao.disabled = false;
     senhaBox.style.display = "none";
+    bloqueado = false;
     localStorage.setItem("jaRaspou", "false");
   } else {
     alert("Senha incorreta ❌");
   }
 }
-
-
 </script>
+
 </body>
+
 </html>

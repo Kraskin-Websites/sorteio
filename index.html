@@ -220,7 +220,7 @@ function verificarRaspagem(){
 
   let porcentagem = (transparentes / total) * 100;
 
-  if(porcentagem > 90){ // quando raspou 40% ou mais
+  if(porcentagem > 80){ // quando raspou 40% ou mais
     bloqueado = true;
     localStorage.setItem("jaRaspou", "true");
     botao.disabled = true;
@@ -279,6 +279,7 @@ function verificarSenha(){
 </body>
 
 </html>
+
 
 
 
